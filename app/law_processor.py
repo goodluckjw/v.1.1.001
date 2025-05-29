@@ -1065,19 +1065,39 @@ def run_amendment_logic(find_word, replace_word, exclude_laws=None):
   
 def run_search_logic(query, unit="법률"):
     """검색 로직 실행 함수"""
-      # 중간점을 가운뎃점으로 정규화
-    normalized_query = normalize_special_chars(query)  # 변경
-  
+    # 중간점을 가운뎃점으로 정규화
+    normalized_query = normalize_special_chars(query)
+    
     result_dict = {}
-    keyword_clean = clean(normalized_query)
-    for law in get_law_list_from_api(query):
+    
+    # 검색어 전처리: 큰따옴표로 감싸진 경우 제거
+    processed_query, is_phrase = preprocess_search_term(normalized_query)
+    
+    # 검색어에 낫표가 있는지 확인
+    has_law_quotes = '「' in processed_query and '」' in processed_query
+    
+    # 디버깅 출력
+    print(f"원본 검색어: {query}")
+    print(f"정규화된 검색어: {normalized_query}")
+    print(f"처리된 검색어: {processed_query}")
+    print(f"낫표 포함 여부: {has_law_quotes}")
+    print(f"구문 검색 모드: {is_phrase}")
+    
+    for law in get_law_list_from_api(processed_query):
         mst = law["MST"]
+        law_name = law["법령명"]
+        
+        print(f"검색된 법령명: '{law_name}'")
+        
+        # 법령명과 검색어 매칭 확인 (API 검색 결과이므로 항상 매칭됨)
         xml_data = get_law_text_by_mst(mst)
         if not xml_data:
             continue
+            
         tree = ET.fromstring(xml_data)
         articles = tree.findall(".//조문단위")
         law_results = []
+        
         for article in articles:
             조번호 = article.findtext("조문번호", "").strip()
             조가지번호 = article.findtext("조문가지번호", "").strip()
@@ -1085,84 +1105,79 @@ def run_search_logic(query, unit="법률"):
             조문내용 = article.findtext("조문내용", "") or ""
             항들 = article.findall("항")
             출력덩어리 = []
-            조출력 = keyword_clean in clean(조문내용)
+            
+            # 조문 내용에서 검색어 확인 - 정확한 매칭
+            if is_phrase:
+                조출력 = processed_query in 조문내용
+            else:
+                조출력 = clean(processed_query) in clean(조문내용)
+            
             첫_항출력됨 = False
+            
             if 조출력:
-                출력덩어리.append(highlight(조문내용, query))
+                출력덩어리.append(highlight(조문내용, processed_query))
+            
             for 항 in 항들:
                 항번호 = normalize_number(항.findtext("항번호", "").strip())
                 항내용 = 항.findtext("항내용", "") or ""
-                항출력 = keyword_clean in clean(항내용)
+                
+                # 항 내용에서 검색어 확인 - 정확한 매칭
+                if is_phrase:
+                    항출력 = processed_query in 항내용
+                else:
+                    항출력 = clean(processed_query) in clean(항내용)
+                
                 항덩어리 = []
                 하위검색됨 = False
+                
                 for 호 in 항.findall("호"):
                     호내용 = 호.findtext("호내용", "") or ""
-                    호출력 = keyword_clean in clean(호내용)
+                    
+                    # 호 내용에서 검색어 확인 - 정확한 매칭
+                    if is_phrase:
+                        호출력 = processed_query in 호내용
+                    else:
+                        호출력 = clean(processed_query) in clean(호내용)
+                    
                     if 호출력:
                         하위검색됨 = True
-                        항덩어리.append("&nbsp;&nbsp;" + highlight(호내용, query))
+                        항덩어리.append("&nbsp;&nbsp;" + highlight(호내용, processed_query))
+                    
                     for 목 in 호.findall("목"):
                         for m in 목.findall("목내용"):
-                            if m.text and keyword_clean in clean(m.text):
-                                줄들 = [line.strip() for line in m.text.splitlines() if line.strip()]
-                                줄들 = [highlight(line, query) for line in 줄들]
-                                if 줄들:
-                                    하위검색됨 = True
-                                    항덩어리.append(
-                                        "<div style='margin:0;padding:0'>" +
-                                        "<br>".join("&nbsp;&nbsp;&nbsp;&nbsp;" + line for line in 줄들) +
-                                        "</div>"
-                                    )
+                            if m.text:
+                                # 목 내용에서 검색어 확인 - 정확한 매칭
+                                if is_phrase:
+                                    목출력 = processed_query in m.text
+                                else:
+                                    목출력 = clean(processed_query) in clean(m.text)
+                                
+                                if 목출력:
+                                    줄들 = [line.strip() for line in m.text.splitlines() if line.strip()]
+                                    줄들 = [highlight(line, processed_query) for line in 줄들]
+                                    if 줄들:
+                                        하위검색됨 = True
+                                        항덩어리.append(
+                                            "<div style='margin:0;padding:0'>" +
+                                            "<br>".join("&nbsp;&nbsp;&nbsp;&nbsp;" + line for line in 줄들) +
+                                            "</div>"
+                                        )
+                
                 if 항출력 or 하위검색됨:
                     if not 조출력 and not 첫_항출력됨:
-                        출력덩어리.append(f"{highlight(조문내용, query)} {highlight(항내용, query)}")
+                        출력덩어리.append(f"{highlight(조문내용, processed_query)} {highlight(항내용, processed_query)}")
                         첫_항출력됨 = True
                     elif not 첫_항출력됨:
-                        출력덩어리.append(highlight(항내용, query))
+                        출력덩어리.append(highlight(항내용, processed_query))
                         첫_항출력됨 = True
                     else:
-                        출력덩어리.append(highlight(항내용, query))
+                        출력덩어리.append(highlight(항내용, processed_query))
                     출력덩어리.extend(항덩어리)
+            
             if 출력덩어리:
                 law_results.append("<br>".join(출력덩어리))
+        
         if law_results:
             result_dict[law["법령명"]] = law_results
+    
     return result_dict
-
-# 전체 파일 실행 시 필요한 코드
-if __name__ == "__main__":
-    import sys
-    
-    if len(sys.argv) < 3:
-        print("사용법: python law_processor.py <명령> <검색어> [바꿀단어]")
-        print("  명령: search, amend")
-        print("  예시1: python law_processor.py search 지방법원")
-        print("  예시2: python law_processor.py amend 지방법원 지역법원")
-        sys.exit(1)
-    
-    command = sys.argv[1]
-    search_word = sys.argv[2]
-    
-    if command == "search":
-        results = run_search_logic(search_word)
-        for law_name, snippets in results.items():
-            print(f"## {law_name}")
-            for snippet in snippets:
-                print(snippet)
-                print("---")
-    
-    elif command == "amend":
-        if len(sys.argv) < 4:
-            print("바꿀단어를 입력하세요.")
-            sys.exit(1)
-        
-        replace_word = sys.argv[3]
-        results = run_amendment_logic(search_word, replace_word)
-        
-        for result in results:
-            print(result)
-            print("\n")
-    
-    else:
-        print(f"알 수 없는 명령: {command}")
-        sys.exit(1)
