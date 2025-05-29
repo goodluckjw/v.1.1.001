@@ -30,10 +30,19 @@ def highlight(text, query):
     return pattern.sub(r'<mark>\1</mark>', text)
 
 def get_law_list_from_api(query):
-    exact_query = f'"{query}"'
+    # 이미 큰따옴표로 감싸져 있는지 확인
+    if query.startswith('"') and query.endswith('"'):
+        exact_query = query  # 이미 큰따옴표가 있으면 그대로 사용
+    else:
+        exact_query = f'"{query}"'  # 없으면 추가
+    
     encoded_query = quote(exact_query)
     page = 1
     laws = []
+    
+    # 디버깅을 위해 실제 검색 쿼리 출력
+    print(f"API 검색 쿼리: {exact_query}")
+    
     while True:
         url = f"{BASE}/DRF/lawSearch.do?OC={OC}&target=law&type=XML&display=100&page={page}&search=2&knd=A0002&query={encoded_query}"
         try:
@@ -53,10 +62,12 @@ def get_law_list_from_api(query):
         except Exception as e:
             print(f"법률 검색 중 오류 발생: {e}")
             break
+    
     # 디버깅을 위해 검색된 법률 목록 출력
     print(f"검색된 법률 수: {len(laws)}")
-    for idx, law in enumerate(laws):
+    for idx, law in enumerate(laws[:5]):  # 처음 5개만 출력
         print(f"{idx+1}. {law['법령명']}")
+    
     return laws
 
 def get_law_text_by_mst(mst):
