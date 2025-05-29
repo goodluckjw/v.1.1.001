@@ -20,13 +20,19 @@ def highlight(text, query):
     """검색어를 HTML로 하이라이트 처리해주는 함수"""
     if not query or not text:
         return text
+    
     # 중간점을 가운뎃점으로 정규화 (하이라이트에서도 일관성 유지)
-    normalized_query = normalize_special_chars(query)  # 변경
+    normalized_query = normalize_special_chars(query)
+    
+    # 검색어 전처리: 큰따옴표로 감싸진 경우 제거
+    processed_query, _ = preprocess_search_term(normalized_query)
     
     # 정규식 특수문자 이스케이프
-    escaped_query = re.escape(normalized_query)
-    # 대소문자 구분없이 검색
-    pattern = re.compile(f'({escaped_query})', re.IGNORECASE)
+    escaped_query = re.escape(processed_query)
+    
+    # 유니코드를 고려한 정규식 패턴 (re.UNICODE 플래그 추가)
+    pattern = re.compile(f'({escaped_query})', re.IGNORECASE | re.UNICODE)
+    
     return pattern.sub(r'<mark>\1</mark>', text)
 
 def get_law_list_from_api(query):
@@ -36,7 +42,12 @@ def get_law_list_from_api(query):
     else:
         exact_query = f'"{query}"'  # 없으면 추가
     
-    encoded_query = quote(exact_query)
+    # 유니코드 문자를 올바르게 인코딩: UTF-8로 먼저 인코딩한 후 URL 인코딩
+    try:
+        encoded_query = quote(exact_query.encode('utf-8'))
+    except UnicodeEncodeError:
+        # 이미 바이트 문자열인 경우
+        encoded_query = quote(exact_query)
     page = 1
     laws = []
     
@@ -65,7 +76,7 @@ def get_law_list_from_api(query):
     
     # 디버깅을 위해 검색된 법률 목록 출력
     print(f"검색된 법률 수: {len(laws)}")
-    for idx, law in enumerate(laws[:5]):  # 처음 5개만 출력
+    for idx, law in enumerate(laws[:3]):  # 처음 3개만 출력
         print(f"{idx+1}. {law['법령명']}")
     
     return laws
