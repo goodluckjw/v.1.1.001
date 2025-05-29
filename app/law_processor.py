@@ -42,12 +42,13 @@ def get_law_list_from_api(query):
     else:
         exact_query = f'"{query}"'  # 없으면 추가
     
-    # 유니코드 문자를 올바르게 인코딩: UTF-8로 먼저 인코딩한 후 URL 인코딩
-    try:
-        encoded_query = quote(exact_query.encode('utf-8'))
-    except UnicodeEncodeError:
-        # 이미 바이트 문자열인 경우
-        encoded_query = quote(exact_query)
+    # 유니코드 문자를 올바르게 인코딩: UTF-8 바이트로 변환 후 URL 인코딩
+    if isinstance(exact_query, str):
+        # 문자열인 경우 UTF-8로 인코딩한 후 quote 적용
+        encoded_query = quote(exact_query.encode('utf-8'), safe='')
+    else:
+        # 이미 바이트인 경우 그대로 quote 적용
+        encoded_query = quote(exact_query, safe='')
     page = 1
     laws = []
     
