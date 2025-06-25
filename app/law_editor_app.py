@@ -2,27 +2,33 @@ import streamlit as st
 import os
 import importlib.util
 
+# Streamlit 페이지 설정
 st.set_page_config(
-            layout="wide",
-            menu_items={},  # 빈 딕셔너리로 설정하여 햄버거 메뉴 항목 제거
-            page_icon="📘",  # 선택적: 페이지 아이콘 설정
+    layout="wide", # 넓은 화면 레이아웃 사용
+    menu_items={},  # 햄버거 메뉴 항목 제거 (깔끔한 UI)
+    page_icon="📘",  # 페이지 아이콘 설정
 )
 
-
-
+# 애플리케이션 제목 표시
 st.markdown("<h1 style='font-size:20px;'>📘 부칙개정 도우미 (v.1.1.001)</h1>", unsafe_allow_html=True)
 
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app"))
-processor_path = os.path.join(base_dir, "law_processor.py")
+# law_processor.py 모듈을 동적으로 로드
+# 현재 스크립트의 디렉토리를 기준으로 law_processor.py 파일의 경로를 계산합니다.
+# 일반적으로 'app' 디렉토리에 law_editor_app.py와 law_processor.py가 함께 있다고 가정합니다.
+# 따라서 law_processor.py는 현재 파일과 동일한 디렉토리에 있다고 가정합니다.
+processor_path = os.path.join(os.path.dirname(__file__), "law_processor.py") # 수정된 경로
+
+# importlib.util을 사용하여 모듈을 동적으로 로드
 spec = importlib.util.spec_from_file_location("law_processor", processor_path)
 law_processor = importlib.util.module_from_spec(spec)
+# 로드된 모듈을 실행 (이 부분이 IndentationError의 원인이 될 수 있으므로, law_processor.py의 들여쓰기가 중요합니다.)
 spec.loader.exec_module(law_processor)
 
-
+# law_processor 모듈의 함수를 현재 스크립트에서 직접 사용할 수 있도록 참조 설정
 run_amendment_logic = law_processor.run_amendment_logic
-# run_search_logic = lambda q, u: {}  # placeholder (기본형에서 미사용)
-run_search_logic = law_processor.run_search_logic 
+run_search_logic = law_processor.run_search_logic
 
+# 사용법 안내 섹션 (확장 가능)
 with st.expander("ℹ️ 사용법 안내"):
     st.markdown(      
              "- 이 앱은 다음 두 가지 기능을 제공합니다:\n"
@@ -43,31 +49,54 @@ with st.expander("ℹ️ 사용법 안내"):
         "- 속도가 느립니다(테스트 결과 일반적인 경우 2&#126;3분, 개정문 출력항목 100개 기준 4&#126;5분 소요). 네트워크 속도나 시스템 성능 탓이 아니니 손으로 하는 것보다는 빠르겠지 싶은 경우에 사용해주세요.🥺 \n"
         "- 오류가 있을 수 있습니다. 오류를 발견하시는 분은 사법법제과 김재우(jwkim@assembly.go.kr)에게 알려주시면 감사하겠습니다. (캡쳐파일도 같이 주시면 좋아요)"
     )
-  
+# 검색 기능 섹션
 st.header("🔍 검색 기능")
 search_query = st.text_input("검색어 입력", key="search_query")
 do_search = st.button("검색 시작")
+
 if do_search and search_query:
     with st.spinner("🔍 검색 중..."):
+        # law_processor 모듈의 run_search_logic 함수 호출
         result = law_processor.run_search_logic(search_query, unit="법률")
         st.success(f"{len(result)}개의 법률을 찾았습니다")
-        for law_name, sections in result.items():
-            with st.expander(f"📄 {law_name}"):
-                for html in sections:
-                    st.markdown(html, unsafe_allow_html=True)
+        if result:
+            for law_name, sections in result.items():
+                with st.expander(f"📄 {law_name}"):
+                    for html in sections:
+                        st.markdown(html, unsafe_allow_html=True)
+        else:
+            st.info("검색 결과가 없습니다.")
 
+# 타법개정문 생성 섹션
 st.header("✏️ 타법개정문 생성")
 find_word = st.text_input("찾을 문자열")
 replace_word = st.text_input("바꿀 문자열")
 exclude_laws = st.text_input("배제할 법률 (쉼표로 구분)", 
-                           help="결과에서 제외할 법률 이름을 쉼표(,)로 구분하여 입력하세요.")
+                               help="결과에서 제외할 법률 이름을 쉼표(,)로 구분하여 입력하세요.")
 do_amend = st.button("개정문 생성")
 
 if do_amend and find_word and replace_word:
     with st.spinner("🛠 개정문 생성 중..."):
         # 입력된 배제 법률을 리스트로 변환
         exclude_law_list = [law.strip() for law in exclude_laws.split(',')] if exclude_laws else []
+        # law_processor 모듈의 run_amendment_logic 함수 호출
         result = run_amendment_logic(find_word, replace_word, exclude_law_list)
         st.success("개정문 생성 완료")
-        for amend in result:
-            st.markdown(amend, unsafe_allow_html=True)
+        if result:
+            for amend in result:
+                st.markdown(amend, unsafe_allow_html=True)
+        else:
+            st.info("개정 대상 조문이 없습니다.")
+
+
+
+
+
+
+
+
+
+
+
+
+
