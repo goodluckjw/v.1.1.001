@@ -932,7 +932,7 @@ def run_amendment_logic(find_word, replace_word, exclude_laws=None):
 
             # 항 내용 검색
             for 항 in article.findall("항"):
-                항번호 = normalize_number(항.findtext("항번호", "").strip())
+                 항번호 = normalize_number(항.findtext("항번호", "").strip())
                 항번호_부분 = f"제{항번호}항" if 항번호 else ""
                 
                 # 각 목 외의 부분 확인 (호에서 찾을 수 있음)
@@ -988,7 +988,6 @@ def run_amendment_logic(find_word, replace_word, exclude_laws=None):
                     
                     호내용 = 호.findtext("호내용", "") or ""
                     
-                    # 호 내용에서 검색어 확인
                     호_검색어_있음 = processed_find_word in 호내용
                     
                     if 호_검색어_있음:
@@ -1027,7 +1026,6 @@ def run_amendment_logic(find_word, replace_word, exclude_laws=None):
                             if not m.text:
                                 continue
                                 
-                            # 목 내용에서 검색어 확인
                             목_검색어_있음 = processed_find_word in m.text
                                 
                             if 목_검색어_있음:
@@ -1278,7 +1276,7 @@ def run_search_logic(query, unit="법률"):
                     if 항_검색됨 and not 본문_검색됨: # 본문에서 이미 항내용이 하이라이트된 경우 중복 방지
                         출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {highlight( 항내용, processed_query)}</p>")
                     elif not 항_검색됨 and 항내용_출력_필요: # 항 내용 자체에는 없지만 하위에서 찾은 경우
-                        출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. { 항내용}</p>")
+                        출력덩어리.append(f"<p>&nbsp;&nbsp;{ 항번호}. {항내용}</p>")
                     elif 항_검색됨 and 본문_검색됨: # 본문에서 이미 하이라이트되었지만 항번호가 필요한 경우
                         # 본문 하이라이트가 더 큰 범위이므로, 항번호만 붙여서 다시 표시하거나, 이 부분을 재고해야 함.
                         # 여기서는 일단 간단히 처리: 항번호만 표시하고 내용은 본문에서 하이라이트된 것으로 간주.
