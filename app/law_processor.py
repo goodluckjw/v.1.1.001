@@ -484,7 +484,7 @@ def apply_josa_rule(orig, replaced, josa):
                 return f'"{orig}"을 "{replaced}"으로 한다.'
         else:  # 규칙 14-2: B에 받침이 없는 경우
             quote_prefix = '"' if josa and josa.startswith('"') else ""
-            return f'"{orig}{josa}"을 "{replaced}{quote_prefix}란"으로 한다.'
+            return f'"{orig}{josa}"을 "{replaced}{quote_prefix}라"로 한다.'
     
     elif clean_josa == "로서" or clean_josa == "로써":  # 규칙 15: A로서/로써 -> B으로서/으로써/로서/로써
         if orig_has_batchim:  # 규칙 15-1: A에 받침이 있는 경우
@@ -1278,7 +1278,7 @@ def run_search_logic(query, unit="법률"):
                     if 항_검색됨 and not 본문_검색됨: # 본문에서 이미 항내용이 하이라이트된 경우 중복 방지
                         출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {highlight( 항내용, processed_query)}</p>")
                     elif not 항_검색됨 and 항내용_출력_필요: # 항 내용 자체에는 없지만 하위에서 찾은 경우
-                        출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {항내용}</p>")
+                        출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. { 항내용}</p>")
                     elif 항_검색됨 and 본문_검색됨: # 본문에서 이미 하이라이트되었지만 항번호가 필요한 경우
                         # 본문 하이라이트가 더 큰 범위이므로, 항번호만 붙여서 다시 표시하거나, 이 부분을 재고해야 함.
                         # 여기서는 일단 간단히 처리: 항번호만 표시하고 내용은 본문에서 하이라이트된 것으로 간주.
