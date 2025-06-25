@@ -1257,7 +1257,7 @@ def run_search_logic(query, unit="법률"):
                                 목_검색됨 = processed_query in m.text if is_phrase else clean(processed_query) in clean(m.text)
                                 if 목_검색됨:
                                     하위_호목_검색됨 = True
-                                     항내용_출력_필요 = True
+                                    항내용_출력_필요 = True
                                     break
                         if 하위_호목_검색됨:
                             break
