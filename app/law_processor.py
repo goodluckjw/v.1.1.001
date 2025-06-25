@@ -932,7 +932,7 @@ def run_amendment_logic(find_word, replace_word, exclude_laws=None):
 
             # 항 내용 검색
             for 항 in article.findall("항"):
-                 항번호 = normalize_number(항.findtext("항번호", "").strip())
+                항번호 = normalize_number(항.findtext("항번호", "").strip())
                 항번호_부분 = f"제{항번호}항" if 항번호 else ""
                 
                 # 각 목 외의 부분 확인 (호에서 찾을 수 있음)
@@ -964,7 +964,7 @@ def run_amendment_logic(find_word, replace_word, exclude_laws=None):
                         # 공백 포함 구문 처리
                         phrase_matches = find_phrase_with_josa(항내용, processed_find_word)
                         for _, phrase, josa in phrase_matches:
-                            location = f"{조문식별자}{ 항번호_부분}{additional_info}"
+                            location = f"{조문식별자}{항번호_부분}{additional_info}"
                             chunk_map[(processed_find_word, processed_replace_word, josa, None)].append(location)
                     else:
                         # 단어 단위 처리
@@ -1077,7 +1077,7 @@ def run_amendment_logic(find_word, replace_word, exclude_laws=None):
         
         for (chunk, replaced, josa, suffix), locations in chunk_map.items():
             # "로서/로써", "으로서/으로써" 특수 접미사 처리 -> 조사로 간주
-            if josa in ["로서", "로써", "으로서", "으로써"]:
+            if josa in ["으로서", "로써", "으로서", "으로써"]:
                 rule = apply_josa_rule(chunk, replaced, josa)
             # "등", "등의", "등인", "등만", "에" 등의 접미사는 덩어리에서 제외하고 일반 처리 (규칙 0 적용)
             elif suffix in ["등", "등의", "등인", "등만", "등에", "에", "에게", "만", "만을", "만이", "만은", "만에", "만으로"]:
@@ -1274,15 +1274,15 @@ def run_search_logic(query, unit="법률"):
                         
                     # 항 내용 자체 하이라이트 (이미 조문내용에 포함된 경우 제외)
                     if 항_검색됨 and not 본문_검색됨: # 본문에서 이미 항내용이 하이라이트된 경우 중복 방지
-                        출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {highlight( 항내용, processed_query)}</p>")
+                        출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {highlight(항내용, processed_query)}</p>")
                     elif not 항_검색됨 and 항내용_출력_필요: # 항 내용 자체에는 없지만 하위에서 찾은 경우
-                        출력덩어리.append(f"<p>&nbsp;&nbsp;{ 항번호}. {항내용}</p>")
+                        출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {항내용}</p>")
                     elif 항_검색됨 and 본문_검색됨: # 본문에서 이미 하이라이트되었지만 항번호가 필요한 경우
                         # 본문 하이라이트가 더 큰 범위이므로, 항번호만 붙여서 다시 표시하거나, 이 부분을 재고해야 함.
                         # 여기서는 일단 간단히 처리: 항번호만 표시하고 내용은 본문에서 하이라이트된 것으로 간주.
                         # 더 정교하게 하려면 본문 하이라이트 시 항번호를 포함하도록 수정해야 함.
                         # 현재 로직은 항내용 자체에 검색어가 있다면 항 번호와 내용을 다시 출력합니다.
-                         출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {highlight( 항내용, processed_query)}</p>")
+                         출력덩어리.append(f"<p>&nbsp;&nbsp;{항번호}. {highlight(항내용, processed_query)}</p>")
 
                     # 호 내용 처리
                     for 호 in 호들:
